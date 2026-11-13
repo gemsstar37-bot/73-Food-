@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>73 Food</title>
+<style>
+:root{--ink:#26332d;--muted:#68756e;--green:#496b56;--pale:#edf3ee;--line:#e2e9e3;--bg:#f7f9f7}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:760px;margin:auto;padding:18px 14px 40px}.hero{background:#fff;border:1px solid var(--line);border-radius:20px;padding:20px;margin-bottom:14px}
+h1{font-size:27px;margin:0 0 4px}.sub{color:var(--muted);font-size:14px}.pill{display:inline-block;background:var(--pale);color:var(--green);border-radius:30px;padding:5px 10px;font-size:12px;font-weight:650;margin-bottom:10px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0}
+label{display:block;font-size:13px;font-weight:650;color:var(--muted);margin:0 0 6px}
+select,input,button{font:inherit}select,input{width:100%;border:1px solid var(--line);border-radius:11px;padding:12px;background:#fff;color:var(--ink);min-height:46px}
+button{border:0;border-radius:11px;padding:12px 15px;background:var(--green);color:white;font-weight:650;min-height:44px;cursor:pointer}
+button.secondary{background:var(--pale);color:var(--green)}button.ghost{background:#fff;color:var(--green);border:1px solid var(--line)}
+.row{display:flex;gap:9px;align-items:center}.row>*{flex:1;min-width:0}.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:12px 0}.tabs button{background:#f0f3f0;color:var(--muted)}.tabs button.active{background:var(--green);color:white}
+.daygrid{display:flex;gap:7px;overflow:auto;padding:2px 0 10px}.daygrid button{white-space:nowrap;background:#f0f3f0;color:var(--muted);padding:9px 13px}.daygrid button.active{background:var(--green);color:white}
+.foodlist{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.food{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);padding:10px;border-radius:11px;font-size:14px}.food input{width:18px;min-height:18px;margin:2px 0 0;accent-color:var(--green)}
+.note{font-size:12px;color:var(--muted);margin-top:7px}.selection{background:var(--pale);border-radius:12px;padding:12px;margin-top:12px;font-size:14px;white-space:pre-wrap}
+.status{font-size:12px;color:var(--muted);margin-top:10px}.error{color:#a23b32}.hidden{display:none}.sectiontitle{font-size:18px;font-weight:750;margin:0 0 10px}
+@media(max-width:480px){.foodlist{grid-template-columns:1fr}.row.stack{flex-direction:column;align-items:stretch}.hero{padding:17px}h1{font-size:24px}}
+</style>
+</head>
+<body><main>
+<header class="hero"><span class="pill">YOUR FAMILY FOOD PLANNER</span><h1>73 Food</h1><div class="sub">Breakfast · Lunch · Dinner<br>Gary · Shweta · Rahul · Trishha</div><div id="status" class="status">Connecting to your shared menu…</div></header>
+<section class="panel">
+<div class="sectiontitle">Plan your meals</div>
+<div class="row"><div><label>Planning period</label><select id="period"><option value="week">This week</option><option value="month">This month</option></select></div><div><label>Day</label><select id="day"></select></div></div>
+<div class="tabs"><button data-meal="Breakfast" class="active">Breakfast</button><button data-meal="Lunch">Lunch</button><button data-meal="Dinner">Dinner</button></div>
+<div class="row"><div><div class="sectiontitle" id="mealTitle">Breakfast</div><div class="note">Choose 3–5 dishes if possible. You can save fewer while planning.</div></div></div>
+<div id="foods" class="foodlist"></div>
+<div class="selection" id="selectedSummary">No dishes selected yet.</div>
+</section>
+<section class="panel">
+<div class="sectiontitle">Add a dish</div><div class="row stack"><input id="newFood" placeholder="Type a dish to add"><button id="addFood">Add to this meal</button></div>
+<div class="note">New dishes are added to the shared family list for everyone.</div>
+</section>
+<section class="panel">
+<div class="sectiontitle">Special item for this day</div><input id="special" placeholder="Guests, celebration or something special"><div class="note">Saved automatically for the selected day.</div>
+</section>
+<section class="panel">
+<div class="sectiontitle">Share the menu</div><button id="share" style="width:100%">Copy menu for WhatsApp</button><div class="note">Paste the copied menu into your family WhatsApp group.</div>
+</section>
+</main>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const FIREBASE_CONFIG = {
+  apiKey: "PASTE_API_KEY_HERE",
+  authDomain: "PASTE_PROJECT_ID_HERE.firebaseapp.com",
+  databaseURL: "PASTE_DATABASE_URL_HERE",
+  projectId: "PASTE_PROJECT_ID_HERE",
+  appId: "PASTE_APP_ID_HERE"
+};
+const ROOM_PATH = "family_6dcGH92CFeZrAR8XycTajAv";
+const lists={
+Breakfast:["Half-fried eggs","Boiled eggs","Omelette","Scrambled eggs","Poha","Upma","Dosa","Idli sambar","Sabudana khichdi","Toast","Dal pakwan","Aloo tikki","Vegetable sandwich","Cheese toast","Paratha","Thepla","Besan chilla","Moong dal chilla","Pancakes","Mushroom toast"],
+Lunch:["Monday dal","Chutti dal","Teen dal","Peas aloo","Soya bean","Rajma chawal","Black dal chawal","Mushrooms","Vegetable biryani","Sai bhaji","Chole","Chana masala","Kadhi chawal","Palak paneer","Paneer bhurji","Aloo gobi","Bhindi masala","Baingan bharta","Mixed vegetables","Undhiyu","Dal khichdi","Vegetable pulao","Chapati and sabzi","Stuffed paratha","Curd rice","Chicken biryani – Rahul","Butter chicken – Rahul","Chicken burger – Rahul","Chicken frankie – Rahul","Chicken made by Shweta – Rahul"],
+Dinner:["Vegetable burger","Tomato soup","Pasta","Thai curry","Paneer roll","Stir-fry vegetables","Fried rice","Egg frankie","Mushroom on toast","Masala dosa","Chilla","Vegetable soup","Grilled sandwich","Paneer tikka","Dal and chapati","Vegetable wrap","Hakka noodles","Roti and sabzi","Khichdi","Salad bowl","Chole kulche","Uttapam"]
+};
+const $=id=>document.getElementById(id);let meal="Breakfast",data={},db=null,ref=null,ready=false;
+function periodKey(){let d=new Date();if($("period").value==="month")return "month-"+d.getFullYear()+"-"+(d.getMonth()+1);let x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));let day=x.getUTCDay()||7;x.setUTCDate(x.getUTCDate()+4-day);let year=x.getUTCFullYear();let start=new Date(Date.UTC(year,0,1));let week=Math.ceil((((x-start)/86400000)+1)/7);return "week-"+year+"-"+week}
+function dayKey(){return $("day").value}
+function key(){return periodKey()+"/"+dayKey()}
+function setStatus(t,err=false){$("status").textContent=t;$("status").className="status"+(err?" error":"")}
+function days(){return $("period").value==="week"?["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]:Array.from({length:new Date().getDate()===0?31:new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate()},(_,i)=>String(i+1))}
+function fillDays(){let old=$("day").value,arr=days();$("day").innerHTML=arr.map((x,i)=>`<option value="${x}">${$("period").value==="week"?x:"Date "+x}</option>`).join("");$("day").value=arr.includes(old)?old:arr[0];render()}
+function chosen(){return (((data[key()]||{}).meals||{})[meal]||[])}
+function render(){
+ $("mealTitle").textContent=meal;
+ const custom=((data.custom||{})[meal]||[]),all=[...new Set([...lists[meal],...custom])],sel=chosen();
+ $("foods").innerHTML=all.map((x,i)=>`<label class="food"><input type="checkbox" data-food="${encodeURIComponent(x)}" ${sel.includes(x)?"checked":""}><span>${x}</span></label>`).join("");
+ $("foods").querySelectorAll("input").forEach(c=>c.addEventListener("change",()=>{let name=decodeURIComponent(c.dataset.food),a=chosen();a=c.checked?[...a,name]:a.filter(v=>v!==name);saveMeal(a)}));
+ $("selectedSummary").textContent=sel.length?sel.map(x=>"• "+x).join("\n"):"No dishes selected yet.";
+ $("special").value=(data[key()]||{}).special||"";
+}
+function saveMeal(arr){data[key()]??={meals:{}};data[key()].meals??={};data[key()].meals[meal]=arr;persist();render()}
+function persist(){if(ref&&ready)ref.set(data).catch(e=>setStatus("Could not save. Check your connection.",true))}
+$("period").addEventListener("change",fillDays);$("day").addEventListener("change",render);
+document.querySelectorAll("[data-meal]").forEach(b=>b.addEventListener("click",()=>{meal=b.dataset.meal;document.querySelectorAll("[data-meal]").forEach(x=>x.classList.toggle("active",x===b));render()}));
+$("addFood").addEventListener("click",()=>{let v=$("newFood").value.trim();if(!v)return;data.custom??={};data.custom[meal]??=[];if(!data.custom[meal].includes(v))data.custom[meal].push(v);$("newFood").value="";persist();render()});
+$("special").addEventListener("change",()=>{data[key()]??={meals:{}};data[key()].special=$("special").value.trim();persist()});
+function shareText(){let out=["73 FOOD — FAMILY MENU"];let p=$("period").value;for(let d of days()){let k=periodKey()+"/"+d,entry=data[k];if(!entry)continue;let lines=[];for(let m of ["Breakfast","Lunch","Dinner"]){let a=(entry.meals||{})[m]||[];if(a.length)lines.push(m+": "+a.join(", "))}if(entry.special)lines.push("Special: "+entry.special);if(lines.length)out.push("\n"+d+"\n"+lines.join("\n"))}return out.join("\n") }
+$("share").addEventListener("click",async()=>{let t=shareText();try{await navigator.clipboard.writeText(t);$("share").textContent="Copied! Paste into WhatsApp";setTimeout(()=>$("share").textContent="Copy menu for WhatsApp",2200)}catch(e){prompt("Copy your family menu:",t)}});
+fillDays();
+function start(){
+ const bad=Object.values(FIREBASE_CONFIG).some(v=>v.startsWith("PASTE_"));
+ if(bad){setStatus("Setup needed: add your free Firebase project details using the included instructions.",true);return}
+ try{firebase.initializeApp(FIREBASE_CONFIG);db=firebase.database();ref=db.ref(ROOM_PATH);ref.on("value",s=>{data=s.val()||{};ready=true;setStatus("Connected · Changes sync for everyone");render()},e=>setStatus("Connection issue: "+e.message,true))}
+ catch(e){setStatus("Setup error: "+e.message,true)}
+}
+start();
+</script></body></html>
